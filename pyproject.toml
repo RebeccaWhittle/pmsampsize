@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "pmsampsize"
+version = "0.1.0"
+description = "Sample size for development of a prediction model."
+authors = ["Rebecca Whittle & Joie Ensor"]
+license = "GNU General Public License v3.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
