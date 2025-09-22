@@ -97,6 +97,8 @@ def pmsampsize_bin(rsquared,parameters,prevalence,shrinkage,cstatistic,noprint):
            "cstatistic": cstatistic
     }
 
+    return out
+
 ### continuous
 def pmsampsize_cont(rsquared,parameters,intercept,sd,shrinkage,mmoe,noprint):
 
@@ -208,6 +210,8 @@ def pmsampsize_cont(rsquared,parameters,intercept,sd,shrinkage,mmoe,noprint):
           "type": "continuous"
     }
 
+    return out
+
 
 ###survival
 def pmsampsize_surv(rsquared,parameters,rate,timepoint,meanfup,shrinkage,mmoe,noprint):
@@ -315,6 +319,8 @@ def pmsampsize_surv(rsquared,parameters,rate,timepoint,meanfup,shrinkage,mmoe,no
            "tot_per_yrs_final": tot_per_yrs_final,
            "type": "survival"
     }
+
+    return out
 
 
 ###cstat2rsq
@@ -483,6 +489,82 @@ def pmsampsize_errorcheck(type,csrsquared,nagrsquared,rsquared,parameters,shrink
 def pmsampsize(type, parameters, nagrsquared = None, csrsquared = None, rsquared = None,
                shrinkage = 0.9,prevalence = None, cstatistic = None,seed = 123456,rate = None,
                timepoint = None,meanfup = None,intercept = None,sd = None,mmoe=1.1,noprint=None):
+    
+    """Computes the minimum sample size required for the development of a new multivariable prediction model
+ 
+    Parameters
+    ----------
+    type: str
+        specifies the type of analysis for which sample size is being calculated
+        "b" specifies sample size calculation for a prediction model with a binary outcome
+        "c" specifies sample size calculation for a prediction model with a continuous outcome
+        "s" specifies sample size calculation for a prediction model with a survival (time-to-event) outcome
+    nagrsquared: float
+        for type="b" or type="s" this specifies the expected value of the Nagelkerke's R-squared of the new model, 
+        which is the Cox-Snell R-squared scaled to lie in the [0,1] range. 
+        It is interpretable in the same way as the standard R-squared, i.e. the percentage of variation in outcome values explained by the model. 
+        Please read the description of rsquared for additional details about specifying the expected R-squared performance
+    csrsquared: float
+        for type="b" or type="s" this specifies the expected value of the Cox-Snell Rsquared of the new model. 
+        The Cox-Snell R-squared is the generalised version of the well-known R-squared for continuous outcomes, based on the likelihood. 
+        Please read the description of rsquared for additional details about specifying the expected R-squared performance. 
+        The papers by Riley et al. (see references) outline how to obtain the Cox-Snell R-squared value from published studies if they are not reported, 
+        using other information (such as the C-statistic [see cstatistic() option below]).
+    rsquared: float
+        for type="c" this specifies the expected value of the R-squared of the new model, where R-squared is the percentage of variation in outcome values explained by the model. 
+        For example, the user may input the value of the Rsquared reported for a previous prediction model study in the same field. 
+        If taking a value from a previous prediction model development study, users should input the model's adjusted R-squared value, 
+        not the apparent R-squared value, as the latter is optimistic (biased). 
+        However, if taking the R-squared value from an external validation of a previous model, the apparent R-squared can be used 
+        (as the validation data was not used for development, and so R-squared apparent is then unbiased). 
+        Users should be conservative with their chosen R-squared value; for example, by taking the R-squared value from a previous model, 
+        even if they hope their new model will improve performance.
+    parameters: int
+        specifies the number of candidate predictor parameters for potential inclusion in the new prediction model. 
+        Note that this may be larger than the number of candidate predictors, as categorical and continuous predictors often require two or more parameters to be estimated.
+    shrinkage: float, default=0.9
+        specifies the level of shrinkage desired at internal validation after developing the new model. 
+        Shrinkage is a measure of overfitting, and can range from 0 to 1, with higher values denoting less overfitting. 
+        We recommend a shrinkage = 0.9 (the default in pmsampsize), which indicates that the predictor effect (beta coefficients) 
+        in the model would need to be shrunk by 10% to adjust for overfitting. See references below for further information
+    prevalence: float
+        (type="b" option) specifies the overall outcome proportion (for a prognostic model) or overall prevalence (for a diagnostic model) expected within the model development dataset. 
+        This should be derived based on previous studies in the same population.
+    cstatistic: float
+        (type="b" option) specifies the C-statistic reported in an existing prediction model study to be used in conjunction with the expected prevalence 
+        to approximate the Cox-Snell R-squared using the approach of Riley et al. 2020. Ideally, this should be an optimism-adjusted C-statistic. 
+        The approximate Cox-Snell Rsquared value is used as described above for the csrsquared() option, 
+        and so is treated as a baseline for the expected performance of the new model.
+    seed: int, default=123456
+        (type="b" option) specifies the initial value of the random-number seed used by the random-number functions 
+        when simulating data to approximate the CoxSnell R-squared based on reported C-statistic 
+        and expected prevalence as described by Riley et al. 2020
+    rate: float
+        (type="s" option) specifies the overall event rate in the population of interest, 
+        for example as obtained from a previous study, for the survival outcome of interest. 
+        NB: rate must be given in time units used for meanfup and timepoint options.
+    timepoint: float
+        (type="s" option) specifies the timepoint of interest for prediction. 
+        NB: time units must be the same as given for meanfup option (e.g. years, months).
+    meanfup: float
+        (type="s" option) specifies the average (mean) follow-up time anticipated for individuals in the model development dataset, 
+        for example as taken from a previous study in the population of interest. NB: time units must be the same as given for timepoint option.
+    intercept: float
+        (type="c" options) specifies the average outcome value in the population of interest 
+        e.g. the average blood pressure, or average pain score. 
+        This could be based on a previous study, or on clinical knowledge.
+    sd: float
+        (type="c" options) specifies the standard deviation (SD) of outcome values in the population 
+        e.g. the SD for blood pressure in patients with all other predictors set to the average. 
+        This could again be based on a previous study, or on clinical knowledge.
+    mmoe: float, default=1.1
+        (type="c" options) multiplicative margin of error (MMOE) acceptable for calculation of the intercept. 
+        The default is a MMOE of 10%. 
+        Confidence interval for the intercept will be displayed in the output for reference. 
+        See references below for further information.
+    noprint: bool, default=False
+        supresses output being printed                                                
+    """   
 
   # error checking
     pmsampsize_errorcheck(type=type,nagrsquared=nagrsquared,csrsquared=csrsquared,rsquared=rsquared,parameters=parameters,shrinkage=shrinkage,cstatistic=cstatistic,
