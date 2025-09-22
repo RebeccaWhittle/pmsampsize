@@ -16,7 +16,6 @@ $ pip install pmsampsize
 from pmsampsize.pmsampsize import *
 
 samplesize = pmsampsize(type="b", cstatistic=0.89, parameters=24, prevalence=0.174) # change options to meet your requirements
-summary(samplesize)
 ```
 
 ## License
